@@ -8,8 +8,13 @@ import os
 app = Flask(__name__)
 
 # Cargar las credenciales desde el archivo JSON
-# Cambio temporal para forzar el commit
-credentials = service_account.Credentials.from_service_account_file('credenciales.json')
+import os
+import json
+from google.oauth2 import service_account
+
+credentials_info = json.loads(os.getenv('GOOGLE_CREDENTIALS'))
+credentials = service_account.Credentials.from_service_account_info(credentials_info)
+
 
 # Crear un cliente para la API de Google Vision
 client = vision.ImageAnnotatorClient(credentials=credentials)
