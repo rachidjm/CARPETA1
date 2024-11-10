@@ -1,3 +1,0 @@
-google-cloud-vision
-google-auth
-requests
