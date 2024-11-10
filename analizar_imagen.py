@@ -8,7 +8,7 @@ import os
 app = Flask(__name__)
 
 # Cargar las credenciales desde el archivo JSON
-credentials = service_account.Credentials.from_service_account_file('C:/Users/Rachi/Desktop/Carpeta1/Credenciales.json')
+credentials = service_account.Credentials.from_service_account_file('credenciales.json')
 
 # Crear un cliente para la API de Google Vision
 client = vision.ImageAnnotatorClient(credentials=credentials)
@@ -50,4 +50,5 @@ def analizar_imagen():
 # Ejecutar la aplicación en Heroku
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+
 
