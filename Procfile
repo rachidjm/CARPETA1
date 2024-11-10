@@ -1,0 +1,1 @@
+worker: python analizar_imagen.py
