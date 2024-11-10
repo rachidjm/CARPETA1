@@ -1,5 +1,4 @@
-google-cloud-vision
-google-auth
-requests
-Flask==2.x.x
-gunicorn==20.x.x
+Flask==2.3.3
+gunicorn==20.1.0
+google-cloud-vision==3.8.0
+requests==2.32.0
