@@ -1,1 +1,2 @@
-web: python analizar_imagen.py
+web: python app.py
+worker: python analizar_imagen.py

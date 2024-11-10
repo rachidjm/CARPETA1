@@ -2,3 +2,4 @@ google-cloud-vision
 google-auth
 requests
 Flask==2.3.2
+Flask
