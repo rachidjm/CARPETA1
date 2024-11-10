@@ -8,6 +8,7 @@ import os
 app = Flask(__name__)
 
 # Cargar las credenciales desde el archivo JSON
+# Cambio temporal para forzar el commit
 credentials = service_account.Credentials.from_service_account_file('credenciales.json')
 
 # Crear un cliente para la API de Google Vision
