@@ -6,11 +6,16 @@ import requests
 
 app = Flask(__name__)
 
-# Cargar credenciales desde el archivo JSON
-credentials_info = service_account.Credentials.from_service_account_file('credenciales.json')
+# Cargar credenciales desde la variable de entorno
+credenciales_json = os.getenv("GOOGLE_APPLICATION_CREDENTIALS_JSON")
+credentials_info = service_account.Credentials.from_service_account_info(eval(credenciales_json))
 
 # Crear cliente de Google Vision
 client = vision.ImageAnnotatorClient(credentials=credentials_info)
+
+@app.route('/')
+def index():
+    return "Bienvenido a ImageSave API. Usa /analizar para analizar imágenes."
 
 @app.route('/analizar', methods=['POST'])
 def analizar():
@@ -43,4 +48,5 @@ def analizar():
 
 if __name__ == '__main__':
     app.run(debug=True)
+
 
