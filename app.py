@@ -13,11 +13,15 @@ credentials_info = service_account.Credentials.from_service_account_info(eval(cr
 # Crear cliente de Google Vision
 client = vision.ImageAnnotatorClient(credentials=credentials_info)
 
+@app.route('/', methods=['GET'])
+def home():
+    return "Bienvenido a la API de análisis de imágenes. Usa la ruta /analizar para subir una imagen.", 200
+
 @app.route('/analizar', methods=['POST'])
 def analizar():
     if 'file' not in request.files:
         return jsonify({"error": "No file provided"}), 400
-    
+
     file = request.files['file']
     content = file.read()
 
