@@ -1,10 +1,12 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 import os
 from google.oauth2 import service_account
 from google.cloud import vision
 import requests
 
 app = Flask(__name__)
+CORS(app)
 
 # Cargar credenciales desde la variable de entorno
 credenciales_json = os.getenv("GOOGLE_APPLICATION_CREDENTIALS_JSON")
