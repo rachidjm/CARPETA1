@@ -1,6 +1,5 @@
 from flask import Flask, request, jsonify
 import os
-import json
 from google.oauth2 import service_account
 from google.cloud import vision
 import requests
@@ -9,16 +8,7 @@ app = Flask(__name__)
 
 # Cargar credenciales desde la variable de entorno
 credenciales_json = os.getenv("GOOGLE_APPLICATION_CREDENTIALS_JSON")
-
-# Verificar si se tienen credenciales y cargarlas
-if credenciales_json:
-    try:
-        credentials_dict = json.loads(credenciales_json)
-        credentials_info = service_account.Credentials.from_service_account_info(credentials_dict)
-    except json.JSONDecodeError:
-        raise ValueError("Las credenciales JSON proporcionadas no son válidas.")
-else:
-    raise ValueError("No se han proporcionado credenciales JSON válidas.")
+credentials_info = service_account.Credentials.from_service_account_info(eval(credenciales_json))
 
 # Crear cliente de Google Vision
 client = vision.ImageAnnotatorClient(credentials=credentials_info)
@@ -53,6 +43,7 @@ def analizar():
     return jsonify({"consulta": consulta, "resultado": url})
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
 
 
