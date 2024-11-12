@@ -1,14 +1,15 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 import os
 from google.oauth2 import service_account
 from google.cloud import vision
-from flask_cors import CORS
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
 
 # Cargar credenciales desde la variable de entorno
 credenciales_json = os.getenv("GOOGLE_APPLICATION_CREDENTIALS_JSON")
+print("Credenciales cargadas:", credenciales_json)  # Línea de depuración
 if credenciales_json is None:
     raise ValueError("Las credenciales no están definidas en la variable de entorno 'GOOGLE_APPLICATION_CREDENTIALS_JSON'.")
 credentials_info = service_account.Credentials.from_service_account_info(eval(credenciales_json))
@@ -23,6 +24,7 @@ def home():
 @app.route('/analizar', methods=['POST'])
 def analizar():
     try:
+        # Comprobación simple para verificar si la solicitud llega
         if 'file' not in request.files:
             return jsonify({"error": "No se proporcionó ningún archivo"}), 400
 
