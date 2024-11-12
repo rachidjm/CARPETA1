@@ -6,7 +6,14 @@ import requests
 from flask_cors import CORS
 
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "*"}})
+CORS(app)
+
+# Configurar los headers de CORS para permitir solicitudes desde cualquier origen y cualquier header
+@app.after_request
+def after_request(response):
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+    response.headers.add('Access-Control-Allow-Methods', 'GET,POST,OPTIONS')
+    return response
 
 # Cargar credenciales desde la variable de entorno
 credenciales_json = os.getenv("GOOGLE_APPLICATION_CREDENTIALS_JSON")
@@ -24,21 +31,32 @@ def analizar():
     if request.method == 'GET':
         return "Esta es la ruta /analizar. Usa POST para subir una imagen.", 200
 
+    # Añadir un log para saber si el método POST está siendo utilizado
+    print("Recibida solicitud en el método POST de /analizar")
+
     if 'file' not in request.files:
+        print("No se envió un archivo en la solicitud.")
         return jsonify({"error": "No file provided"}), 400
 
     file = request.files['file']
     content = file.read()
+
+    # Verificar si el archivo tiene contenido
+    if not content:
+        print("El archivo está vacío.")
+        return jsonify({"error": "File is empty"}), 400
 
     image = vision.Image(content=content)
 
     # Detectar etiquetas
     response = client.label_detection(image=image)
     etiquetas = response.label_annotations
+    print("Etiquetas detectadas:", [etiqueta.description for etiqueta in etiquetas])
 
     # Detectar texto en la imagen
     response_text = client.text_detection(image=image)
     texto = response_text.text_annotations
+    print("Texto detectado:", [t.description for t in texto])
 
     # Generar consulta para búsqueda
     if texto:
@@ -47,6 +65,8 @@ def analizar():
         etiquetas_filtradas = [etiqueta.description for etiqueta in etiquetas if etiqueta.score > 0.8 and etiqueta.description.lower() not in ["liquid", "font", "rectangle", "material property", "tints and shades"]]
         consulta = ' '.join(etiquetas_filtradas)
 
+    print("Consulta generada:", consulta)
+
     # URL de búsqueda de productos
     url = f"https://cosmosave.com/search?q={consulta}"
     return jsonify({"consulta": consulta, "resultado": url})
@@ -54,4 +74,3 @@ def analizar():
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
-
