@@ -5,7 +5,8 @@ from google.oauth2 import service_account
 from google.cloud import vision
 
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "*"}})
+# Configurar CORS para permitir todas las rutas desde cualquier origen
+CORS(app, resources={r"/": {"origins": "*"}, r"/analizar": {"origins": "*"}})
 
 # Cargar credenciales desde la variable de entorno
 credenciales_json = os.getenv("GOOGLE_APPLICATION_CREDENTIALS_JSON")
