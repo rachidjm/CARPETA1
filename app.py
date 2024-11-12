@@ -2,21 +2,15 @@ from flask import Flask, request, jsonify
 import os
 from google.oauth2 import service_account
 from google.cloud import vision
-import requests
 from flask_cors import CORS
 
 app = Flask(__name__)
-CORS(app)
-
-# Configurar los headers de CORS para permitir solicitudes desde cualquier origen y cualquier header
-@app.after_request
-def after_request(response):
-    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
-    response.headers.add('Access-Control-Allow-Methods', 'GET,POST,OPTIONS')
-    return response
+CORS(app, resources={r"/*": {"origins": "*"}})
 
 # Cargar credenciales desde la variable de entorno
 credenciales_json = os.getenv("GOOGLE_APPLICATION_CREDENTIALS_JSON")
+if credenciales_json is None:
+    raise ValueError("Las credenciales no están definidas en la variable de entorno 'GOOGLE_APPLICATION_CREDENTIALS_JSON'.")
 credentials_info = service_account.Credentials.from_service_account_info(eval(credenciales_json))
 
 # Crear cliente de Google Vision
@@ -26,50 +20,50 @@ client = vision.ImageAnnotatorClient(credentials=credentials_info)
 def home():
     return "Bienvenido a la API de análisis de imágenes. Usa la ruta /analizar para subir una imagen.", 200
 
-@app.route('/analizar', methods=['GET', 'POST'])
+@app.route('/analizar', methods=['POST'])
 def analizar():
-    if request.method == 'GET':
-        return "Esta es la ruta /analizar. Usa POST para subir una imagen.", 200
+    try:
+        if 'file' not in request.files:
+            return jsonify({"error": "No se proporcionó ningún archivo"}), 400
 
-    # Añadir un log para saber si el método POST está siendo utilizado
-    print("Recibida solicitud en el método POST de /analizar")
+        file = request.files['file']
+        content = file.read()
 
-    if 'file' not in request.files:
-        print("No se envió un archivo en la solicitud.")
-        return jsonify({"error": "No file provided"}), 400
+        if not content:
+            return jsonify({"error": "El archivo está vacío"}), 400
 
-    file = request.files['file']
-    content = file.read()
+        image = vision.Image(content=content)
 
-    # Verificar si el archivo tiene contenido
-    if not content:
-        print("El archivo está vacío.")
-        return jsonify({"error": "File is empty"}), 400
+        # Detectar etiquetas
+        response = client.label_detection(image=image)
+        if response.error.message:
+            return jsonify({"error": f"Error de Google Vision: {response.error.message}"}), 500
 
-    image = vision.Image(content=content)
+        etiquetas = response.label_annotations
 
-    # Detectar etiquetas
-    response = client.label_detection(image=image)
-    etiquetas = response.label_annotations
-    print("Etiquetas detectadas:", [etiqueta.description for etiqueta in etiquetas])
+        # Detectar texto en la imagen
+        response_text = client.text_detection(image=image)
+        if response_text.error.message:
+            return jsonify({"error": f"Error de Google Vision: {response_text.error.message}"}), 500
 
-    # Detectar texto en la imagen
-    response_text = client.text_detection(image=image)
-    texto = response_text.text_annotations
-    print("Texto detectado:", [t.description for t in texto])
+        texto = response_text.text_annotations
 
-    # Generar consulta para búsqueda
-    if texto:
-        consulta = texto[0].description.strip().replace('\n', ' ')
-    else:
-        etiquetas_filtradas = [etiqueta.description for etiqueta in etiquetas if etiqueta.score > 0.8 and etiqueta.description.lower() not in ["liquid", "font", "rectangle", "material property", "tints and shades"]]
-        consulta = ' '.join(etiquetas_filtradas)
+        # Generar consulta para búsqueda
+        if texto:
+            consulta = texto[0].description.strip().replace('\n', ' ')
+        else:
+            etiquetas_filtradas = [etiqueta.description for etiqueta in etiquetas if etiqueta.score > 0.8 and etiqueta.description.lower() not in ["liquid", "font", "rectangle", "material property", "tints and shades"]]
+            consulta = ' '.join(etiquetas_filtradas)
 
-    print("Consulta generada:", consulta)
+        if not consulta:
+            return jsonify({"error": "No se pudo generar una consulta a partir de la imagen proporcionada."}), 400
 
-    # URL de búsqueda de productos
-    url = f"https://cosmosave.com/search?q={consulta}"
-    return jsonify({"consulta": consulta, "resultado": url})
+        # URL de búsqueda de productos
+        url = f"https://cosmosave.com/search?q={consulta}"
+        return jsonify({"consulta": consulta, "resultado": url})
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
