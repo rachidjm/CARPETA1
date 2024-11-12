@@ -5,11 +5,10 @@ from google.oauth2 import service_account
 from google.cloud import vision
 
 app = Flask(__name__)
-CORS(app, resources={r"/analizar": {"origins": "*"}})
+CORS(app)  # Habilitar CORS para todas las rutas
 
 # Cargar credenciales desde la variable de entorno
 credenciales_json = os.getenv("GOOGLE_APPLICATION_CREDENTIALS_JSON")
-print("Credenciales cargadas:", credenciales_json)  # Línea de depuración
 if credenciales_json is None:
     raise ValueError("Las credenciales no están definidas en la variable de entorno 'GOOGLE_APPLICATION_CREDENTIALS_JSON'.")
 credentials_info = service_account.Credentials.from_service_account_info(eval(credenciales_json))
@@ -24,7 +23,7 @@ def home():
 @app.route('/analizar', methods=['POST'])
 def analizar():
     try:
-        # Comprobación simple para verificar si la solicitud llega
+        # Comprobación para verificar si el archivo está presente
         if 'file' not in request.files:
             return jsonify({"error": "No se proporcionó ningún archivo"}), 400
 
@@ -39,14 +38,14 @@ def analizar():
         # Detectar etiquetas
         response = client.label_detection(image=image)
         if response.error.message:
-            return jsonify({"error": f"Error de Google Vision: {response.error.message}"}), 500
+            return jsonify({"error": f"Error de Google Vision (etiquetas): {response.error.message}"}), 500
 
         etiquetas = response.label_annotations
 
         # Detectar texto en la imagen
         response_text = client.text_detection(image=image)
         if response_text.error.message:
-            return jsonify({"error": f"Error de Google Vision: {response_text.error.message}"}), 500
+            return jsonify({"error": f"Error de Google Vision (texto): {response_text.error.message}"}), 500
 
         texto = response_text.text_annotations
 
