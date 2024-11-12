@@ -1,12 +1,12 @@
 from flask import Flask, request, jsonify
-from flask_cors import CORS
 import os
 from google.oauth2 import service_account
 from google.cloud import vision
 import requests
+from flask_cors import CORS
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, resources={r"/*": {"origins": "*"}})
 
 # Cargar credenciales desde la variable de entorno
 credenciales_json = os.getenv("GOOGLE_APPLICATION_CREDENTIALS_JSON")
@@ -19,8 +19,11 @@ client = vision.ImageAnnotatorClient(credentials=credentials_info)
 def home():
     return "Bienvenido a la API de análisis de imágenes. Usa la ruta /analizar para subir una imagen.", 200
 
-@app.route('/analizar', methods=['POST'])
+@app.route('/analizar', methods=['GET', 'POST'])
 def analizar():
+    if request.method == 'GET':
+        return "Esta es la ruta /analizar. Usa POST para subir una imagen.", 200
+
     if 'file' not in request.files:
         return jsonify({"error": "No file provided"}), 400
 
